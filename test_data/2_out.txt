@@ -1,0 +1,16 @@
+degeneracy order: 12 10 11 8 9 4 6 7 1 5 3 0 2
+
+core_numbers:
+vertex 0: 3
+vertex 1: 3
+vertex 2: 3
+vertex 3: 3
+vertex 4: 3
+vertex 5: 3
+vertex 6: 3
+vertex 7: 3
+vertex 8: 2
+vertex 9: 2
+vertex 10: 2
+vertex 11: 2
+vertex 12: 1

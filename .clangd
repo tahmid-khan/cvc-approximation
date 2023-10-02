@@ -1,0 +1,41 @@
+# yaml-language-server: $schema=https://json.schemastore.org/clangd.json
+
+CompileFlags:
+  Compiler: clang++
+  Add: [
+    -std=c++20,
+    -pedantic-errors,
+    -Weverything,
+
+    -Wno-c++98-compat,
+    -Wno-missing-prototypes,
+    -Wno-sign-conversion,
+  ]
+
+Diagnostics:
+  UnusedIncludes: Strict
+  ClangTidy:
+    Add: ["*"]
+    Remove: [
+      abseil-*,
+      altera-*,
+      android-*,
+      fuchsia-*,
+      google-*,
+      llvm*,
+      modernize-use-trailing-return-type,
+      zircon-*,
+      readability-else-after-return,
+      readability-static-accessed-through-instance,
+      readability-avoid-const-params-in-decls,
+      misc-non-private-member-variables-in-classes,
+      readability-identifier-length,
+      readability-braces-around-statements,
+      hicpp-braces-around-statements,
+    ]
+    CheckOptions:
+      readability-identifier-naming.VariableCase: lower_case
+      readability-identifier-naming.FunctionCase: lower_case
+      readability-identifier-naming.ClassCase: Leading_upper_snake_case
+      readability-identifier-naming.StructCase: Leading_upper_snake_case
+      cppcoreguidelines-init-variables.IncludeStyle: google

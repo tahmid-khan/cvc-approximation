@@ -1,0 +1,10 @@
+degeneracy order: 0 6 1 5 2 4 3
+
+core numbers:
+vertex 0: 1
+vertex 1: 1
+vertex 2: 2
+vertex 3: 2
+vertex 4: 2
+vertex 5: 2
+vertex 6: 1
