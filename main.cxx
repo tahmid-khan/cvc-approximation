@@ -1,8 +1,8 @@
 #include <algorithm>
 #include <cstdlib>
 #include <fstream>
+#include <ios>
 #include <iostream>
-#include <istream>
 #include <numeric>
 #include <vector>
 
@@ -24,10 +24,13 @@ int main(int argc, char const* argv[])
         return EXIT_FAILURE;
     }
 
+    // throw exceptions when input format is incorrect
+    fin.exceptions(std::ios_base::failbit);
+
     auto n = get_input<int>(fin); ///< number of vertices
     auto m = get_input<int>(fin); ///< number of edges
 
-    std::vector<std::vector<int>> adj(n); ///< the adjency lists
+    std::vector<std::vector<int>> adj(n); ///< the adjency list
     for (int i {0}; i < m; ++i) {
         auto u = get_input<int>(fin);
         auto v = get_input<int>(fin);
