@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.12)
-project(vertex-cover-research
+project(vertex-cover-finding
     LANGUAGES CXX
 )
 
