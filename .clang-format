@@ -1,0 +1,29 @@
+# yaml-language-server: $schema=https://json.schemastore.org/clang-format.json
+
+---
+Language: Cpp
+BasedOnStyle: Mozilla
+
+IndentWidth: 4
+ContinuationIndentWidth: 4
+TabWidth: 4
+UseTab: Never
+
+BreakBeforeBraces: Stroustrup
+
+AlwaysBreakAfterReturnType: None
+AlwaysBreakAfterDefinitionReturnType: None
+PenaltyReturnTypeOnItsOwnLine: 400
+
+AlwaysBreakTemplateDeclarations: MultiLine
+
+BreakConstructorInitializers: BeforeColon
+
+BreakInheritanceList: BeforeColon
+
+Cpp11BracedListStyle: true
+
+AllowShortIfStatementsOnASingleLine: AllIfsAndElse
+AllowShortLambdasOnASingleLine: All
+
+InsertNewlineAtEOF: true
