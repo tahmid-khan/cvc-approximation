@@ -10,6 +10,9 @@ CompileFlags:
     -Wno-c++98-compat,
     -Wno-missing-prototypes,
     -Wno-sign-conversion,
+    -Wno-shadow-field-in-constructor
+    -Wno-unsafe-buffer-usage
+    -Wno-unused-member-function
   ]
 
 Diagnostics:
