@@ -1,9 +1,9 @@
 cmake_minimum_required(VERSION 3.20)
-project("CVC Approximation"
+project("ILST-CVC"
     LANGUAGES CXX
 )
 
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)  # export compile_commands.json file
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)  # export a compilation (compile_commands.json file)
 set(CMAKE_CXX_STANDARD_REQUIRED   ON)  # require that the C++ version be specified
 set(CMAKE_CXX_STANDARD            20)  # use C++20
 set(CMAKE_CXX_EXTENSIONS          OFF) # stick to ISO Standard C++; disable non-standard compiler-specific extensions to the language
@@ -11,14 +11,14 @@ set(CMAKE_CXX_EXTENSIONS          OFF) # stick to ISO Standard C++; disable non-
 
 ## Create the build targets
 
-add_library(simple_graph simple_graph.h simple_graph.cxx)
-add_executable(min_cvc min_cvc.cxx)
+add_library(simple_graph src/simple_graph.h src/simple_graph.cxx)
+add_executable(min_cvc src/min_cvc.cxx)
 target_link_libraries(min_cvc PRIVATE simple_graph)
 
-add_library(ordering ordering.h ordering.cxx)
-add_library(ilst ilst.h ilst.cxx)
-add_executable(approx_cvc approx_cvc.cxx)
-target_link_libraries(approx_cvc
+add_library(ordering src/ordering.h src/ordering.cxx)
+add_library(ilst src/ilst.h src/ilst.cxx)
+add_executable(ilst_cvc src/ilst_cvc.cxx)
+target_link_libraries(ilst_cvc
     PRIVATE
         simple_graph
         ordering
@@ -29,7 +29,7 @@ set(ALL_TARGETS
     simple_graph
     min_cvc
     ordering
-    ilst approx_cvc
+    ilst ilst_cvc
 )
 
 ## Set up compiler warnings
