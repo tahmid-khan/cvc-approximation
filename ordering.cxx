@@ -130,14 +130,14 @@ std::vector<int> saturation_degree_ordering(const Simple_graph& g)
     }
 
     std::vector<int> res(g.order(), -1);
-    int index{g.order() - 1};
+    int index{0};
 
     // The main loop [Lines 42-52 of the paper's pseudocode]
     while (!uncolored.empty()) {
         // [Line 43]
         const int v{*uncolored.begin()};
         uncolored.erase(uncolored.begin());
-        res[index--] = v;
+        res[index++] = v;
 
         // [Line 44]
         const int c{smallest_available_color(v)};
