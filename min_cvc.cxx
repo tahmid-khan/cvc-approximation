@@ -1,4 +1,9 @@
+// This is a personal academic project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++, C#, and Java: https://pvs-studio.com
+
 #include <algorithm>
+#include <bit>
+#include <cstdint>
 #include <cstdlib>
 #include <cstring>
 #include <functional>
@@ -8,140 +13,119 @@
 #include <utility>
 #include <vector>
 
-#include "adjacency_list_graph.h"
+#include "simple_graph.h"
 
-using std::any_of;
-using std::cerr;
-using std::cin;
-using std::cout;
-using std::fill;
-using std::fill_n;
-using std::find;
-using std::function;
-using std::ios_base;
-using std::istream;
-using std::max;
-using std::min;
-using std::next;
-using std::pair;
-using std::prev;
-using std::set;
-using std::strcmp;
-using std::vector;
-namespace ranges = std::ranges;
+// ReSharper disable CppTemplateArgumentsCanBeDeduced
 
-// clang-format off
-// ReSharper disable CppFunctionalStyleCast, CppTemplateArgumentsCanBeDeduced, CppParameterMayBeConst, CppLocalVariableMayBeConst
-// clang-format on
-
-template<typename T> T scan(istream& is = cin);
-bool selection_is_cvc(const Adjacency_list_graph& g, const vector<bool>& is_selected);
-bool update_selection(vector<bool>& is_selected);
-void print_true_indices(vector<bool> bools);
-
-int main(const int argc, const char* argv[])
-{
-    ios_base::sync_with_stdio(false);
-    cin.tie(nullptr);
-    cin.exceptions(ios_base::failbit);
-
-    // NOLINTBEGIN(cppcoreguidelines-pro-bounds-pointer-arithmetic)
-    if (argc > 2 || (argc == 2 && strcmp(argv[1], "-n") != 0)) {
-        cerr << "Usage: " << argv[0] << " [-n]\n";
-        return EXIT_FAILURE;
-    }
-    // NOLINTEND(cppcoreguidelines-pro-bounds-pointer-arithmetic)
-
-    /// output mode: false => vertices, true => cardinality
-    const bool out_mode{argc == 2};
-
-    Adjacency_list_graph g(scan<int>());
-    g.read_edges(scan<int>());
-
-    vector<bool> is_selected(g.order(), false);
-    is_selected[0] = true;
-
-    do { // NOLINT(cppcoreguidelines-avoid-do-while)
-        if (selection_is_cvc(g, is_selected)) {
-            if (out_mode) cout << ranges::count(is_selected, true);
-            else print_true_indices(is_selected);
-            cout << '\n';
-            break;
-        }
-    } while (update_selection(is_selected));
-
-    return 0;
-}
-
-template<typename T> T scan(istream& is)
+template<typename T> T scan(std::istream& is = std::cin)
 {
     T buf;
     is >> buf;
     return buf;
 }
 
-bool selection_is_cvc(const Adjacency_list_graph& g, const vector<bool>& is_selected)
+/// Checks if the `selection` of vertices forms a connected vertex cover of `g`.
+bool selection_is_cvc(const Simple_graph& g, std::uint64_t mask)
 {
-    struct Edge : pair<int, int> {
-        Edge(int u, int v)
-        {
-            first = min(u, v);
-            second = max(u, v);
-        }
-    };
-    set<Edge> covered;
-    vector<bool> is_visited(g.order(), false);
+    std::vector<int> selection;
+    std::vector<bool> is_selected(g.order(), false);
 
-    const function<void(int)> visit_connected = [&](int v) {
+    // check if all edges are covered
+    std::set<std::pair<int, int>> covered;
+    for (int v{0}; mask != 0; mask >>= 1U, ++v) {
+        if ((mask & UINT64_C(1)) != 0) {
+            selection.push_back(v);
+            is_selected[v] = true;
+            for (const auto u : g.neighbors(v))
+                covered.emplace(std::min(u, v), std::max(u, v));
+        }
+    }
+    if (static_cast<int>(covered.size()) != g.size()) return false;
+
+    std::vector<bool> is_visited(g.order(), false);
+
+    // visit all vertices connected to root
+    const std::function<void(int)> visit_connected = [&](const int v) {
         is_visited[v] = true;
-        for (auto u : g.neighbors(v))
+        for (const auto u : g.neighbors(v))
             if (is_selected[u] && !is_visited[u]) visit_connected(u);
     };
-    visit_connected(int(ranges::find(is_selected, true) - is_selected.begin()));
+    const int root{*std::ranges::min_element(selection)};
+    visit_connected(root);
 
-    for (int v{0}; v < g.order(); ++v) {
-        if (is_selected[v]) {
-            if (!is_visited[v]) return false;
-            for (auto u : g.neighbors(v))
-                covered.emplace(v, u);
-        }
-    }
-
-    return int(covered.size()) == g.size();
+    // if any vertex in selection is not visited, it's not connected to root and
+    // hence the selection of vertices is not connected
+    return std::ranges::all_of(selection, [&](const int v) { return is_visited[v]; });
 }
 
-bool update_selection(vector<bool>& is_selected)
+constexpr std::uint64_t next_selection(unsigned n, std::uint64_t mask)
 {
-    auto first_selection = ranges::find(is_selected, true);
-    auto to_select = find(first_selection, is_selected.end(), false);
-
-    if (to_select == is_selected.end()) {
-        if (first_selection == is_selected.begin()) return false;
-
-        fill(first_selection, to_select, false);
-        fill_n(is_selected.begin(), to_select - first_selection + 1, true);
-        return true;
+    if (mask == 0) return 1;
+    if (mask == (UINT64_C(1) << n) - 1) return 0;
+    const auto initial_zeros = static_cast<unsigned>(std::countr_zero(mask));
+    const auto subsequent_ones = static_cast<unsigned>(std::countr_one(mask >> initial_zeros));
+    const unsigned total{initial_zeros + subsequent_ones};
+    const std::uint64_t m{UINT64_C(1) << static_cast<unsigned>(total)};
+    mask &= ~(m - 1);
+    if (total == n) mask |= (UINT64_C(1) << (subsequent_ones + 1)) - 1;
+    else {
+        mask |= (UINT64_C(1) << (subsequent_ones - 1)) - 1;
+        mask |= m;
     }
-
-    *to_select = true;
-    if (any_of(next(to_select), is_selected.end(), [](bool yes) { return yes; })) {
-        *prev(to_select) = false;
-        return true;
-    }
-
-    fill(first_selection, to_select, false);
-    fill_n(is_selected.begin(), to_select - first_selection - 1, true);
-    return true;
+    return mask;
 }
 
-void print_true_indices(vector<bool> bools)
+void print_set_bits(std::uint64_t mask)
 {
-    bool sep{false};
-    for (int v{0}; v < int(bools.size()); ++v) {
-        if (bools[v]) {
-            if (sep) cout << ' ';
-            cout << v;
-            sep = true;
+    int bit{0};
+    for (;;) {
+        if ((mask & UINT64_C(1)) != 0) {
+            std::cout << bit;
+            mask >>= UINT64_C(1);
+            if (mask == 0) {
+                std::cout << '\n';
+                return;
+            }
+            std::cout << ' ';
         }
+        else mask >>= UINT64_C(1);
+        ++bit;
     }
+}
+
+int main(const int argc, const char* const argv[])
+{
+    std::ios_base::sync_with_stdio(false);
+    std::cin.tie(nullptr);
+    std::cin.exceptions(std::ios_base::failbit);
+
+    // NOLINTBEGIN(cppcoreguidelines-pro-bounds-pointer-arithmetic)
+    if (argc > 2 || (argc == 2 && strcmp(argv[1], "-c") != 0)) {
+        std::cerr << "Usage: " << argv[0] << " [-c]\n";
+        return EXIT_FAILURE;
+    }
+    // NOLINTEND(cppcoreguidelines-pro-bounds-pointer-arithmetic)
+
+    /// output mode:
+    ///   - false => print the vertices in the CVC
+    ///   - true => print the cardinality of the CVC
+    const bool out_mode{argc == 2};
+
+    Simple_graph g(scan<int>());
+    for (auto m = scan<int>(); m-- != 0;)
+        g.add_edge(scan<int>(), scan<int>());
+
+    std::uint64_t selection{1};
+
+    do { // NOLINT(cppcoreguidelines-avoid-do-while)
+        if (selection_is_cvc(g, selection)) {
+            if (out_mode) std::cout << std::popcount(selection);
+            else print_set_bits(selection);
+            std::cout << '\n';
+            break;
+        }
+        selection = next_selection(static_cast<unsigned>(g.order()), selection);
+    } while (selection != 0);
+
+    return 0;
 }

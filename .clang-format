@@ -21,6 +21,8 @@ AlwaysBreakTemplateDeclarations: MultiLine
 
 BreakConstructorInitializers: BeforeColon
 
+IndentCaseLabels: false
+
 BreakInheritanceList: BeforeColon
 
 Cpp11BracedListStyle: true
