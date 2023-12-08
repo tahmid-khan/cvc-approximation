@@ -9,6 +9,7 @@
 #include <functional>
 #include <ios>
 #include <iostream>
+#include <iterator>
 #include <set>
 #include <utility>
 #include <vector>
@@ -16,6 +17,8 @@
 #include "simple_graph.h"
 
 // ReSharper disable CppTemplateArgumentsCanBeDeduced
+
+constexpr std::uint64_t u64_1{1};
 
 template<typename T> T scan(std::istream& is = std::cin)
 {
@@ -33,14 +36,14 @@ bool selection_is_cvc(const Simple_graph& g, std::uint64_t mask)
     // check if all edges are covered
     std::set<std::pair<int, int>> covered;
     for (int v{0}; mask != 0; mask >>= 1U, ++v) {
-        if ((mask & UINT64_C(1)) != 0) {
+        if ((mask & u64_1) != 0) {
             selection.push_back(v);
             is_selected[v] = true;
             for (const auto u : g.neighbors(v))
                 covered.emplace(std::min(u, v), std::max(u, v));
         }
     }
-    if (static_cast<int>(covered.size()) != g.size()) return false;
+    if (std::ssize(covered) != g.size()) return false;
 
     std::vector<bool> is_visited(g.order(), false);
 
@@ -55,42 +58,35 @@ bool selection_is_cvc(const Simple_graph& g, std::uint64_t mask)
 
     // if any vertex in selection is not visited, it's not connected to root and
     // hence the selection of vertices is not connected
-    return std::ranges::all_of(selection, [&](const int v) { return is_visited[v]; });
+    return std::ranges::all_of(selection, [&is_visited](const int v) { return is_visited[v]; });
 }
 
 constexpr std::uint64_t next_selection(unsigned n, std::uint64_t mask)
 {
     if (mask == 0) return 1;
-    if (mask == (UINT64_C(1) << n) - 1) return 0;
+    if (mask == (u64_1 << n) - 1) return 0;
     const auto initial_zeros = static_cast<unsigned>(std::countr_zero(mask));
     const auto subsequent_ones = static_cast<unsigned>(std::countr_one(mask >> initial_zeros));
     const unsigned total{initial_zeros + subsequent_ones};
-    const std::uint64_t m{UINT64_C(1) << static_cast<unsigned>(total)};
-    mask &= ~(m - 1);
-    if (total == n) mask |= (UINT64_C(1) << (subsequent_ones + 1)) - 1;
+    const std::uint64_t p{u64_1 << total};
+    mask &= ~(p - 1);
+    if (total == n) mask |= (u64_1 << (subsequent_ones + 1)) - 1;
     else {
-        mask |= (UINT64_C(1) << (subsequent_ones - 1)) - 1;
-        mask |= m;
+        mask |= (u64_1 << (subsequent_ones - 1)) - 1;
+        mask |= p;
     }
     return mask;
 }
 
 void print_set_bits(std::uint64_t mask)
 {
-    int bit{0};
-    for (;;) {
-        if ((mask & UINT64_C(1)) != 0) {
-            std::cout << bit;
-            mask >>= UINT64_C(1);
-            if (mask == 0) {
-                std::cout << '\n';
-                return;
-            }
-            std::cout << ' ';
-        }
-        else mask >>= UINT64_C(1);
-        ++bit;
+    for (int bit{0};; ++bit) {
+        if ((mask & u64_1) != 0) std::cout << bit;
+        mask >>= u64_1;
+        if (mask == 0) break;
+        std::cout << ' ';
     }
+    std::cout << '\n';
 }
 
 int main(const int argc, const char* const argv[])
@@ -100,7 +96,7 @@ int main(const int argc, const char* const argv[])
     std::cin.exceptions(std::ios_base::failbit);
 
     // NOLINTBEGIN(cppcoreguidelines-pro-bounds-pointer-arithmetic)
-    if (argc > 2 || (argc == 2 && strcmp(argv[1], "-c") != 0)) {
+    if (argc > 2 || (argc == 2 && std::strcmp(argv[1], "-c") != 0)) {
         std::cerr << "Usage: " << argv[0] << " [-c]\n";
         return EXIT_FAILURE;
     }

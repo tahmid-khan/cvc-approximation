@@ -28,12 +28,12 @@ public:
 
     /// Adds an edge between vertex `u` and vertex `v`.
     /// Amortized time complexity: O(1)
-    void add_edge(const int u, int v);
+    void add_edge(const int u, const int v);
 
     /// Removes the edge (first if there are multiple) between vertex `u` and vertex `v`.
     /// Returns false iff `u` and `v` are not neighbors.
     /// Time complexity: O(degree(u) + degree(v))
-    bool remove_edge(const int u, int v);
+    bool remove_edge(const int u, const int v);
 
 private:
     int _n;                             ///< number of vertices

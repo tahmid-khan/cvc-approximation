@@ -32,7 +32,7 @@ bool Simple_graph::remove_edge(const int u, const int v)
     auto& v_neighs = _adj.at(v);
 
     const auto v_itr = std::ranges::find(u_neighs, v);
-    if (v_itr == u_neighs.end()) return false;
+    if (v_itr == u_neighs.cend()) return false;
 
     u_neighs.erase(v_itr);
     v_neighs.erase(std::ranges::find(v_neighs, u));

@@ -8,15 +8,16 @@
 #include <functional>
 #include <ios>
 #include <iostream>
+#include <iterator>
 #include <set>
 #include <stdexcept>
 #include <string>
 #include <utility>
 #include <vector>
 
-#include "simple_graph.h"
-#include "ordering.h"
 #include "ilst.h"
+#include "ordering.h"
+#include "simple_graph.h"
 
 // ReSharper disable CppTemplateArgumentsCanBeDeduced
 
@@ -30,20 +31,20 @@ template<typename T> constexpr T scan(std::istream& is = std::cin)
     return buf;
 }
 
-void usage(const char* const exe)
+void show_usage(const char* const exe)
 {
     std::cerr << "Usage: " << exe
               << " <ordering heuristic: (dd|sl|sll|sd)> [<the r parameter if heuristic is sll>]:\n"
-              << "    " << exe << " dd\n"
-              << "    " << exe << " sl\n"
-              << "    " << exe << " sll <r>\n"
-              << "    " << exe << " sd\n";
+              << '\t' << exe << " dd\n"
+              << '\t' << exe << " sl\n"
+              << '\t' << exe << " sll <r>\n"
+              << '\t' << exe << " sd\n";
 }
 
 bool is_connected(const Simple_graph& g)
 {
     std::vector<bool> is_visited(g.order(), false);
-    const std::function<void(int)> dfs = [&](const int v) {
+    const std::function<void(const int)> dfs = [&](const int v) {
         is_visited[v] = true;
         for (const auto u : g.neighbors(v))
             if (!is_visited[u]) dfs(u);
@@ -57,7 +58,7 @@ bool is_connected(const Simple_graph& g)
 std::vector<int> ordering_to_priorities(const std::vector<int>& ordering)
 {
     std::vector<int> priority(ordering.size());
-    const int n{static_cast<int>(ordering.size())};
+    const auto n = static_cast<int>(ordering.size());
     for (int i{0}; i < n; ++i)
         priority[ordering[i]] = n - i - 1;
     return priority;
@@ -81,7 +82,7 @@ std::vector<int> cvc_from_ilst(const Simple_graph& g, const Simple_graph& ilst_t
             if (ilst_tree.degree(l2) == 1) break;
 
         // if l1 and l2 are not g-independent, add l1 to the result
-        if (const auto& nn = g.neighbors(l1); std::ranges::find(nn, l2) != nn.end())
+        if (const auto& nn = g.neighbors(l1); std::ranges::find(nn, l2) != nn.cend())
             res.push_back(l1);
     }
 
@@ -100,12 +101,12 @@ bool selection_is_cvc(const Simple_graph& g, const std::vector<int>& selection)
         for (const auto u : g.neighbors(v))
             covered.emplace(std::min(u, v), std::max(u, v));
     }
-    if (static_cast<int>(covered.size()) != g.size()) return false;
+    if (std::ssize(covered) != g.size()) return false;
 
     std::vector<bool> is_visited(g.order(), false);
 
     // visit all vertices connected to root
-    const std::function<void(int)> visit_connected = [&](const int v) {
+    const std::function<void(const int)> visit_connected = [&](const int v) {
         is_visited[v] = true;
         for (const auto u : g.neighbors(v))
             if (is_selected[u] && !is_visited[u]) visit_connected(u);
@@ -115,7 +116,7 @@ bool selection_is_cvc(const Simple_graph& g, const std::vector<int>& selection)
 
     // if any vertex in selection is not visited, it's not connected to root and
     // hence the selection of vertices is not connected
-    return std::ranges::all_of(selection, [&](const int v) { return is_visited[v]; });
+    return std::ranges::all_of(selection, [&is_visited](const int v) { return is_visited[v]; });
 }
 
 void print_integers(const std::vector<int>& ints)
@@ -134,7 +135,7 @@ int main(const int argc, const char* const argv[])
 
     if (argc == 3) {
         if (std::strcmp(argv[1], "sll") != 0) {
-            usage(argv[0]);
+            show_usage(argv[0]);
             return EXIT_FAILURE;
         }
 
@@ -158,12 +159,12 @@ int main(const int argc, const char* const argv[])
         else if (std::strcmp(argv[1], "sl") == 0) strategy = Ordering_strategy::sl;
         else if (std::strcmp(argv[1], "sd") == 0) strategy = Ordering_strategy::sd;
         else {
-            usage(argv[0]);
+            show_usage(argv[0]);
             return EXIT_FAILURE;
         }
     }
     else {
-        usage(argv[0]);
+        show_usage(argv[0]);
         return EXIT_FAILURE;
     }
     // NOLINTEND(cppcoreguidelines-pro-bounds-pointer-arithmetic)

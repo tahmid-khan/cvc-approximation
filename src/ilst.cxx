@@ -9,11 +9,11 @@
 
 // ReSharper disable CppTemplateArgumentsCanBeDeduced
 
-std::pair<Simple_graph, int> dfs_traverse(const Simple_graph& g, const int root, const std::vector<int>& priority)
+std::pair<Simple_graph, int> dfs_traversal(const Simple_graph& g, const int root, const std::vector<int>& priority)
 {
     auto adj = g.adj_data();
-    const auto cmp = [&priority](const int u1, const int u2) {
-        return priority[u1] > priority[u2];
+    const auto cmp = [&priority](const int u, const int v) {
+        return priority[u] > priority[v];
     };
     for (auto& neighbors : adj)
         std::ranges::sort(neighbors, cmp);
@@ -57,7 +57,7 @@ std::pair<int, int> closest_branch(const Simple_graph& tree, const int leaf)
     const auto move_up = [&]() -> bool {
         const auto& [c, p] = child_parent;
         const auto& neighs = tree.neighbors(p);
-        const auto itr = std::ranges::find_if(neighs, [&](const int u) -> bool { return u != c; });
+        const auto itr = std::ranges::find_if(neighs, [&c](const int u) -> bool { return u != c; });
 
         if (itr == neighs.cend()) {
             child_parent = {p, -1};
@@ -77,7 +77,7 @@ Simple_graph ilst(const Simple_graph& g, const std::vector<int>& priority)
 {
     const auto root = static_cast<int>(std::ranges::max_element(priority) - priority.cbegin());
 
-    auto [tree, l] = dfs_traverse(g, root, priority);
+    auto [tree, l] = dfs_traversal(g, root, priority);
     if (l == -1) return tree;
 
     if (const auto& [bl_child, bl] = closest_branch(tree, l); bl_child != -1 && bl != -1) {

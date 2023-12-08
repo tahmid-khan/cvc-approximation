@@ -1,12 +1,12 @@
 cmake_minimum_required(VERSION 3.20)
-project("ILST-CVC"
+project(ILST-CVC
     LANGUAGES CXX
 )
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)  # export a compilation (compile_commands.json file)
 set(CMAKE_CXX_STANDARD_REQUIRED   ON)  # require that the C++ version be specified
 set(CMAKE_CXX_STANDARD            20)  # use C++20
-set(CMAKE_CXX_EXTENSIONS          OFF) # stick to ISO Standard C++; disable non-standard compiler-specific extensions to the language
+set(CMAKE_CXX_EXTENSIONS          OFF) # disable non-standard compiler-specific extensions to the language; stick to ISO Standard C++
 
 
 ## Create the build targets
@@ -25,17 +25,18 @@ target_link_libraries(ilst_cvc
         ilst
 )
 
-set(ALL_TARGETS
+set(all_targets
     simple_graph
-    min_cvc
     ordering
-    ilst ilst_cvc
+    ilst
+    min_cvc
+    ilst_cvc
 )
 
 ## Set up compiler warnings
 
 if(MSVC)
-    set(WARNINGS
+    set(warnings
         /W4 # Baseline reasonable warnings
         /w14242 # 'identifier': conversion from 'type1' to 'type2', possible loss of data
         /w14254 # 'operator': conversion from 'type1:field_bits' to 'type2:field_bits', possible loss of data
@@ -59,7 +60,7 @@ if(MSVC)
         /permissive- # standards conformance mode for MSVC compiler.
     )
 else()
-    set(CLANG_WARNINGS
+    set(clang_warnings
         -Wall
         -pedantic-errors # error if non-standard C++ is used
         -Wextra # reasonable and standard
@@ -77,10 +78,10 @@ else()
         -Wimplicit-fallthrough # warn on statements that fallthrough without an explicit annotation
     )
     if(CMAKE_CXX_COMPILER_ID MATCHES ".*Clang")
-        set(WARNINGS ${CLANG_WARNINGS})
+        set(warnings ${clang_warnings})
     elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-        set(WARNINGS
-            ${CLANG_WARNINGS}
+        set(warnings
+            ${clang_warnings}
             -Wmisleading-indentation # warn if indentation implies blocks where blocks do not exist
             -Wduplicated-cond # warn if if / else chain has duplicated conditions
             -Wduplicated-branches # warn if if / else branches have duplicated code
@@ -90,9 +91,9 @@ else()
     endif()
 endif()
 
-foreach(target ${ALL_TARGETS})
+foreach(target ${all_targets})
     target_compile_options(${target}
-        INTERFACE $<$<COMPILE_LANGUAGE:CXX>:${WARNINGS}>
+        INTERFACE $<$<COMPILE_LANGUAGE:CXX>:${warnings}>
     )
 endforeach()
 
@@ -100,20 +101,23 @@ endforeach()
 ## Set up sanitizers
 
 option(ENABLE_SANITIZERS "Enable sanitizers" OFF)
-option(USE_MEMORY_SANITIZER "Enable memory sanitizer (available only in Clang); has no effect if ENABLE_SANITIZERS is OFF" OFF)
+option(USE_MEMORY_SANITIZER
+    "Enable MSan (available only in Clang) and disables ASan and LSan; has no effect if compiler is not Clang or ENABLE_SANITIZERS is OFF"
+    OFF
+)
 
 if (${ENABLE_SANITIZERS})
     if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES ".*Clang")
-        set(SANITIZERS "undefined,integer,")
+        set(sanitizers "undefined,integer")
         if(${USE_MEMORY_SANITIZER} AND CMAKE_CXX_COMPILER_ID MATCHES ".*Clang")
-            string(APPEND SANITIZERS "memory")
+            string(APPEND sanitizers ",memory")
         else()
-            string(APPEND SANITIZERS "address,leak")
+            string(APPEND sanitizers ",address,leak")
         endif()
 
-        foreach(target ${ALL_TARGETS})
-            target_compile_options(${target} INTERFACE -fsanitize=${SANITIZERS})
-            target_link_options(${target} INTERFACE -fsanitize=${SANITIZERS})
+        foreach(target ${all_targets})
+            target_compile_options(${target} INTERFACE -fsanitize=${sanitizers})
+            target_link_options(${target} INTERFACE -fsanitize=${sanitizers})
         endforeach()
     elseif(MSVC)
         string(FIND "$ENV{PATH}" "$ENV{VSINSTALLDIR}" index_of_vs_install_dir)
@@ -124,7 +128,7 @@ if (${ENABLE_SANITIZERS})
           )
         endif()
 
-        foreach(target ${ALL_TARGETS})
+        foreach(target ${all_targets})
             target_compile_options(${target} INTERFACE /fsanitize=address /Zi /INCREMENTAL:NO) # MSVC only supports address sanitizer
             target_compile_definitions(${target} INTERFACE _DISABLE_VECTOR_ANNOTATION _DISABLE_STRING_ANNOTATION)
             target_link_options(${target} INTERFACE /INCREMENTAL:NO)
