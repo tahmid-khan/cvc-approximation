@@ -11,24 +11,25 @@ set(CMAKE_CXX_EXTENSIONS          OFF) # disable non-standard compiler-specific 
 
 ## Create the build targets
 
-add_library(simple_graph src/simple_graph.h src/simple_graph.cxx)
-add_executable(min_cvc src/min_cvc.cxx)
+# a library for the graph class
+add_library(simple_graph src/simple_graph/simple_graph.c++)
+
+# the minimum connected vertex cover solver
+add_executable(min_cvc src/min_cvc/main.c++)
+target_include_directories(min_cvc PRIVATE src/simple_graph)
 target_link_libraries(min_cvc PRIVATE simple_graph)
 
-add_library(ordering src/ordering.h src/ordering.cxx)
-add_library(ilst src/ilst.h src/ilst.cxx)
-add_executable(ilst_cvc src/ilst_cvc.cxx)
-target_link_libraries(ilst_cvc
-    PRIVATE
-        simple_graph
-        ordering
-        ilst
+# the ILST-based CVC approximator
+add_executable(ilst_cvc
+    src/ilst_cvc/main.c++
+    src/ilst_cvc/ordering.c++
+    src/ilst_cvc/ilst.c++
 )
+target_include_directories(ilst_cvc PRIVATE src/simple_graph)
+target_link_libraries(ilst_cvc PRIVATE simple_graph)
 
 set(all_targets
     simple_graph
-    ordering
-    ilst
     min_cvc
     ilst_cvc
 )

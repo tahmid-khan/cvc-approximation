@@ -13,12 +13,17 @@ cmake --build build # build the project using the generated build files
 ### Without Using CMake
 
 ```bash
-mkdir build # the directory to output the built libraries and executables files to
-g++ -std=c++20 -O2 -c simple_graph.cxx -o build/simple_graph.o # compile the graph class
-g++ -std=c++20 -O2 -c ordering.cxx -o build/ordering.o # compile the library for the ordering heuristics
-g++ -std=c++20 -O2 -c ilst.cxx -o build/ilst.o # compile the library for the ILST algorithm
-g++ -std=c++20 -O2 min_cvc.cxx simple_graph.o -o build/min_cvc # compile the minimum connected vertex cover solver
-g++ -std=c++20 -O2 ilst_cvc.cxx simple_graph.o ordering.o ilst.o -o build/ilst_cvc # compile the ILST-based CVC approximator
+# the directory to output the built libraries and executables files to
+mkdir build
+
+# compile the library for the graph class
+g++ -std=c++20 -O2 -c src/simple_graph/simple_graph.c++ -o build/simple_graph.o
+
+# build the minimum connected vertex cover solver
+g++ -std=c++20 -O2 src/min_cvc/*.c++ -I src/simple_graph -static build/simple_graph.o -o build/min_cvc
+
+# build the ILST-based CVC approximator
+g++ -std=c++20 -O2 src/ilst_cvc/*.c++ -I src/simple_graph -static build/simple_graph.o -o build/ilst_cvc
 ```
 
 ## Usage
