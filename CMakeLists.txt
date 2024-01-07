@@ -109,11 +109,17 @@ option(USE_MEMORY_SANITIZER
 
 if (${ENABLE_SANITIZERS})
     if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES ".*Clang")
-        set(sanitizers "undefined,integer")
+        set(sanitizers "undefined,float-divide-by-zero")
+        if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+            string(APPEND sanitizers ",float-cast-overflow")
+        elseif(CMAKE_CXX_COMPILER_ID MATCHES ".*Clang")
+            string(APPEND sanitizers ",unsigned-integer-overflow,implicit-conversion,local-bounds,nullability")
+        endif()
+
         if(${USE_MEMORY_SANITIZER} AND CMAKE_CXX_COMPILER_ID MATCHES ".*Clang")
             string(APPEND sanitizers ",memory")
         else()
-            string(APPEND sanitizers ",address,leak")
+            string(APPEND sanitizers ",address")
         endif()
 
         foreach(target ${all_targets})
