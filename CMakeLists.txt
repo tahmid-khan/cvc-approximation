@@ -94,7 +94,7 @@ endif()
 
 foreach(target ${all_targets})
     target_compile_options(${target}
-        INTERFACE $<$<COMPILE_LANGUAGE:CXX>:${warnings}>
+        PUBLIC $<$<COMPILE_LANGUAGE:CXX>:${warnings}>
     )
 endforeach()
 
@@ -117,8 +117,8 @@ if (${ENABLE_SANITIZERS})
         endif()
 
         foreach(target ${all_targets})
-            target_compile_options(${target} INTERFACE -fsanitize=${sanitizers})
-            target_link_options(${target} INTERFACE -fsanitize=${sanitizers})
+            target_compile_options(${target} PUBLIC -fsanitize=${sanitizers})
+            target_link_options(${target} PUBLIC -fsanitize=${sanitizers})
         endforeach()
     elseif(MSVC)
         string(FIND "$ENV{PATH}" "$ENV{VSINSTALLDIR}" index_of_vs_install_dir)
@@ -130,9 +130,9 @@ if (${ENABLE_SANITIZERS})
         endif()
 
         foreach(target ${all_targets})
-            target_compile_options(${target} INTERFACE /fsanitize=address /Zi /INCREMENTAL:NO) # MSVC only supports address sanitizer
-            target_compile_definitions(${target} INTERFACE _DISABLE_VECTOR_ANNOTATION _DISABLE_STRING_ANNOTATION)
-            target_link_options(${target} INTERFACE /INCREMENTAL:NO)
+            target_compile_options(${target} PUBLIC /fsanitize=address /Zi /INCREMENTAL:NO) # MSVC only supports address sanitizer
+            target_compile_definitions(${target} PUBLIC _DISABLE_VECTOR_ANNOTATION _DISABLE_STRING_ANNOTATION)
+            target_link_options(${target} PUBLIC /INCREMENTAL:NO)
         endforeach()
     endif()
 endif()
