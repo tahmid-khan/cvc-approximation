@@ -80,11 +80,14 @@ constexpr std::uint64_t next_selection(unsigned n, std::uint64_t mask)
 
 void print_set_bits(std::uint64_t mask)
 {
-    for (int bit{0};; ++bit) {
-        if ((mask & u64_1) != 0) std::cout << bit;
-        mask >>= u64_1;
-        if (mask == 0) break;
-        std::cout << ' ';
+    for (int bit{0}; mask != 0; ++bit) {
+        if ((mask & u64_1) != 0) {
+            std::cout << bit;
+            mask >>= u64_1;
+            if (mask == 0) break;
+            std::cout << ' ';
+        }
+        else mask >>= u64_1;
     }
     std::cout << '\n';
 }
