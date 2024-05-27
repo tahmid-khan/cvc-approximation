@@ -1,96 +1,36 @@
 // This is a personal academic project. Dear PVS-Studio, please check it.
 // PVS-Studio Static Code Analyzer for C, C++, C#, and Java: https://pvs-studio.com
 
-#include <algorithm>
-#include <bit>
+// ReSharper disable CppTemplateArgumentsCanBeDeduced
+
+#include <cassert>
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
-#include <functional>
 #include <ios>
 #include <iostream>
 #include <iterator>
-#include <set>
-#include <utility>
-#include <vector>
+#include <span>
 
+#include "backtracking.h"
+#include "bitmasking.h"
 #include "simple_graph.h"
 
-// ReSharper disable CppTemplateArgumentsCanBeDeduced
+/// Parses the command line.
+bool parse_cmd(const std::span<const char* const> args, bool& use_bitmasking);
 
-constexpr std::uint64_t u64_1{1};
+/// Prints a help message showing the syntax of the command line.
+void show_usage(const char* const cmd_name);
 
-template<typename T> T scan(std::istream& is = std::cin)
-{
-    T buf;
-    is >> buf;
-    return buf;
-}
+/// Inputs a value of type `T` from the `is` input stream and returns it.
+template<typename T> T scan(std::istream& is = std::cin);
 
-/// Checks if the `selection` of vertices forms a connected vertex cover of `g`.
-bool selection_is_cvc(const Simple_graph& g, std::uint64_t mask)
-{
-    std::vector<int> selection;
-    std::vector<bool> is_selected(g.order(), false);
+/// Prints the elements of the `container`, separating them by spaces.
+template<typename C> void output_elems(const C& container);
 
-    // check if all edges are covered
-    std::set<std::pair<int, int>> covered;
-    for (int v{0}; mask != 0; mask >>= 1U, ++v) {
-        if ((mask & u64_1) != 0) {
-            selection.push_back(v);
-            is_selected[v] = true;
-            for (const auto u : g.neighbors(v))
-                covered.emplace(std::min(u, v), std::max(u, v));
-        }
-    }
-    if (std::ssize(covered) != g.size()) return false;
-
-    std::vector<bool> is_visited(g.order(), false);
-
-    // visit all vertices connected to root
-    const std::function<void(int)> visit_connected = [&](const int v) {
-        is_visited[v] = true;
-        for (const auto u : g.neighbors(v))
-            if (is_selected[u] && !is_visited[u]) visit_connected(u);
-    };
-    const int root{*std::ranges::min_element(selection)};
-    visit_connected(root);
-
-    // if any vertex in selection is not visited, it's not connected to root and
-    // hence the selection of vertices is not connected
-    return std::ranges::all_of(selection, [&is_visited](const int v) { return is_visited[v]; });
-}
-
-constexpr std::uint64_t next_selection(unsigned n, std::uint64_t mask)
-{
-    if (mask == 0) return 1;
-    if (mask == (u64_1 << n) - 1) return 0;
-    const auto initial_zeros = static_cast<unsigned>(std::countr_zero(mask));
-    const auto subsequent_ones = static_cast<unsigned>(std::countr_one(mask >> initial_zeros));
-    const unsigned total{initial_zeros + subsequent_ones};
-    const std::uint64_t p{u64_1 << total};
-    mask &= ~(p - 1);
-    if (total == n) mask |= (u64_1 << (subsequent_ones + 1)) - 1;
-    else {
-        mask |= (u64_1 << (subsequent_ones - 1)) - 1;
-        mask |= p;
-    }
-    return mask;
-}
-
-void print_set_bits(std::uint64_t mask)
-{
-    for (int bit{0}; mask != 0; ++bit) {
-        if ((mask & u64_1) != 0) {
-            std::cout << bit;
-            mask >>= u64_1;
-            if (mask == 0) break;
-            std::cout << ' ';
-        }
-        else mask >>= u64_1;
-    }
-    std::cout << '\n';
-}
+/// Prints the indices of the set bits (1 bits) in the binary representation of `mask`, separating
+/// them by spaces.  Indexing starts at 0 on the least significant bit and increases rightwards.
+void output_set_bits(std::uint64_t mask);
 
 int main(const int argc, const char* const argv[])
 {
@@ -98,33 +38,67 @@ int main(const int argc, const char* const argv[])
     std::cin.tie(nullptr);
     std::cin.exceptions(std::ios_base::failbit);
 
-    // NOLINTBEGIN(cppcoreguidelines-pro-bounds-pointer-arithmetic)
-    if (argc > 2 || (argc == 2 && std::strcmp(argv[1], "-c") != 0)) {
-        std::cerr << "Usage: " << argv[0] << " [-c]\n";
+    bool use_bitmasking{false};
+    if (const auto args = std::span(argv, argc); !parse_cmd(args, use_bitmasking)) {
+        show_usage(args[0]);
         return EXIT_FAILURE;
     }
-    // NOLINTEND(cppcoreguidelines-pro-bounds-pointer-arithmetic)
-
-    /// output mode:
-    ///   - false => print the vertices in the CVC
-    ///   - true => print the cardinality of the CVC
-    const bool out_mode{argc == 2};
 
     Simple_graph g(scan<int>());
     for (auto m = scan<int>(); m-- != 0;)
         g.add_edge(scan<int>(), scan<int>());
 
-    std::uint64_t selection{1};
+    if (use_bitmasking) {
+        const auto cvc_mask = find_cvc_by_bitmasking(g);
+        output_set_bits(cvc_mask);
+    }
+    else {
+        const auto cvc = find_cvc_by_backtracking(g);
+        output_elems(cvc);
+    }
 
-    do { // NOLINT(cppcoreguidelines-avoid-do-while)
-        if (selection_is_cvc(g, selection)) {
-            if (out_mode) std::cout << std::popcount(selection);
-            else print_set_bits(selection);
-            std::cout << '\n';
-            break;
-        }
-        selection = next_selection(static_cast<unsigned>(g.order()), selection);
-    } while (selection != 0);
-
+    std::cout << '\n';
     return 0;
+}
+
+[[nodiscard]] bool parse_cmd(const std::span<const char* const> args, bool& use_bitmasking)
+{
+    use_bitmasking = args.size() == 2 && std::strcmp(args[1], "-m") == 0;
+    return args.size() == 1 || use_bitmasking;
+}
+
+void show_usage(const char* const cmd_name)
+{
+    std::cerr << "usage: " << cmd_name << " [-m]\n";
+}
+
+template<typename T> [[nodiscard]] T scan(std::istream& is)
+{
+    T buf;
+    is >> buf;
+    return buf;
+}
+
+template<typename C> void output_elems(const C& container)
+{
+    if (std::empty(container)) return;
+    for (auto it = std::cbegin(container);;) {
+        std::cout << *it;
+        if (++it == std::cend(container)) break;
+        std::cout << ' ';
+    }
+}
+
+void output_set_bits(std::uint64_t mask)
+{
+    constexpr std::uint64_t one_u64{1};
+    for (int bit{0}; mask != 0; ++bit) {
+        if ((mask & one_u64) != 0) {
+            std::cout << bit;
+            mask >>= one_u64;
+            if (mask == 0) break;
+            std::cout << ' ';
+        }
+        else mask >>= one_u64;
+    }
 }

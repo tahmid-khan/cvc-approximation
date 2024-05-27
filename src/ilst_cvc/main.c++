@@ -31,25 +31,38 @@ template<typename T> constexpr T scan(std::istream& is = std::cin)
     return buf;
 }
 
-void show_usage(const char* const exe)
+void show_usage(const char* const cmd_name)
 {
-    std::cerr << "Usage: " << exe
+    std::cerr << "Usage: " << cmd_name
               << " <ordering heuristic: (dd|sl|sll|sd)> [<the r parameter if heuristic is sll>]:\n"
-              << '\t' << exe << " dd\n"
-              << '\t' << exe << " sl\n"
-              << '\t' << exe << " sll <r>\n"
-              << '\t' << exe << " sd\n";
+              << '\t' << cmd_name << " dd\n"
+              << '\t' << cmd_name << " sl\n"
+              << '\t' << cmd_name << " sll <r>\n"
+              << '\t' << cmd_name << " sd\n";
 }
 
 bool is_connected(const Simple_graph& g)
 {
     std::vector<bool> is_visited(g.order(), false);
-    const std::function<void(const int)> dfs = [&](const int v) {
-        is_visited[v] = true;
+    // const std::function<void(const int)> dfs = [&](const int v) {
+    //     is_visited[v] = true;
+    //     for (const auto u : g.neighbors(v))
+    //         if (!is_visited[u]) dfs(u);
+    // };
+    // dfs(0);
+
+    std::vector<int> stack{0};
+    stack.reserve(g.order());
+    is_visited[0] = true;
+    while (!stack.empty()) {
+        const int v{stack.back()};
+        stack.pop_back();
         for (const auto u : g.neighbors(v))
-            if (!is_visited[u]) dfs(u);
-    };
-    dfs(0);
+            if (!is_visited[u]) {
+                is_visited[u] = true;
+                stack.push_back(u);
+            }
+    }
 
     // NOLINTNEXTLINE(*-simplify-boolean-expr)
     return std::ranges::all_of(is_visited, [](const bool status) { return status == true; });
@@ -106,13 +119,25 @@ bool selection_is_cvc(const Simple_graph& g, const std::vector<int>& selection)
     std::vector<bool> is_visited(g.order(), false);
 
     // visit all vertices connected to root
-    const std::function<void(const int)> visit_connected = [&](const int v) {
-        is_visited[v] = true;
-        for (const auto u : g.neighbors(v))
-            if (is_selected[u] && !is_visited[u]) visit_connected(u);
-    };
+    // const std::function<void(const int)> visit_connected = [&](const int v) {
+    //     is_visited[v] = true;
+    //     for (const auto u : g.neighbors(v))
+    //         if (is_selected[u] && !is_visited[u]) visit_connected(u);
+    // };
     const int root{*std::ranges::min_element(selection)};
-    visit_connected(root);
+    // visit_connected(root);
+    std::vector<int> stack{root};
+    stack.reserve(g.order());
+    is_visited[root] = true;
+    while (!stack.empty()) {
+        const int v{stack.back()};
+        stack.pop_back();
+        for (const auto u : g.neighbors(v))
+            if (is_selected[u] && !is_visited[u]) {
+                is_visited[u] = true;
+                stack.push_back(u);
+            }
+    }
 
     // if any vertex in selection is not visited, it's not connected to root and
     // hence the selection of vertices is not connected
@@ -158,6 +183,10 @@ int main(const int argc, const char* const argv[])
         if (std::strcmp(argv[1], "dd") == 0) strategy = Ordering_strategy::dd;
         else if (std::strcmp(argv[1], "sl") == 0) strategy = Ordering_strategy::sl;
         else if (std::strcmp(argv[1], "sd") == 0) strategy = Ordering_strategy::sd;
+        else if (std::strcmp(argv[1], "sll") == 0) {
+            strategy = Ordering_strategy::sll;
+            r = 1;
+        }
         else {
             show_usage(argv[0]);
             return EXIT_FAILURE;

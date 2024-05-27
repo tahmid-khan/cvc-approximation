@@ -15,7 +15,11 @@ set(CMAKE_CXX_EXTENSIONS          OFF) # disable non-standard compiler-specific 
 add_library(simple_graph src/simple_graph/simple_graph.c++)
 
 # the minimum connected vertex cover solver
-add_executable(min_cvc src/min_cvc/main.c++)
+add_executable(min_cvc
+    src/min_cvc/main.c++
+    src/min_cvc/backtracking.c++
+    src/min_cvc/bitmasking.c++
+)
 target_include_directories(min_cvc PRIVATE src/simple_graph)
 target_link_libraries(min_cvc PRIVATE simple_graph)
 
